@@ -15,6 +15,7 @@ namespace Persistence
         public DbSet<Photo> Photos { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<UserFollowing> UserFollowings { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -32,40 +33,25 @@ namespace Persistence
                 .HasForeignKey(aa => aa.ActivityId);
 
             builder.Entity<Comment>()
-            .HasOne(x => x.Activity)
-            .WithMany(x => x.Comments)
-            .OnDelete(DeleteBehavior.Cascade);
+                .HasOne(a => a.Activity)
+                .WithMany(c => c.Comments)
+                .OnDelete(DeleteBehavior.Cascade);
 
-            builder.Entity<UserFollowing>(x =>
-                x.HasKey(k => new { k.ObserverId, k.TargetId })
+            builder.Entity<UserFollowing>(b =>
+            {
+                b.HasKey(k => new { k.ObserverId, k.TargetId });
 
-            );
-            builder.Entity<UserFollowing>()
-             .HasOne(u => u.Observer)
-             .WithMany(a => a.Followings)
-             .HasForeignKey(x => x.ObserverId)
-              .OnDelete(DeleteBehavior.Cascade);
+                b.HasOne(o => o.Observer)
+                    .WithMany(f => f.Followings)
+                    .HasForeignKey(o => o.ObserverId)
+                    .OnDelete(DeleteBehavior.Cascade);
 
+                b.HasOne(o => o.Target)
+                    .WithMany(f => f.Followers)
+                    .HasForeignKey(o => o.TargetId)
+                    .OnDelete(DeleteBehavior.Cascade);
 
-            builder.Entity<UserFollowing>()
-              .HasOne(u => u.Target)
-              .WithMany(a => a.Followers)
-              .HasForeignKey(x => x.TargetId)
-             .OnDelete(DeleteBehavior.Cascade);
-
-
+            });
         }
     }
-
 }
-
-// protected override void OnModelCreating(ModelBuilder modelBuilder)
-// {
-//     modelBuilder.Entity<Book>()
-//     .HasData(
-//           new Book { Id = 1, Price = 12, Title = "The assassination of Jesse James by the coward Robert Ford" },
-//             new Book { Id = 2, Price = 12, Title = "The secret of Blue Train" },
-//             new Book { Id = 3, Price = 12, Title = "The invisible man" }
-//     );
-
-// }

@@ -1,6 +1,4 @@
 using System;
-using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using Application.Comments;
 using MediatR;
@@ -19,9 +17,9 @@ namespace API.SignalR
         public async Task SendComment(Create.Command command)
         {
             var comment = await _mediator.Send(command);
+
             await Clients.Group(command.ActivityId.ToString())
                 .SendAsync("ReceiveComment", comment.Value);
-
         }
 
         public override async Task OnConnectedAsync()
@@ -30,7 +28,6 @@ namespace API.SignalR
             var activityId = httpContext.Request.Query["activityId"];
             await Groups.AddToGroupAsync(Context.ConnectionId, activityId);
             var result = await _mediator.Send(new List.Query{ActivityId = Guid.Parse(activityId)});
-            var username = Context.User.FindFirstValue(ClaimTypes.NameIdentifier);
             await Clients.Caller.SendAsync("LoadComments", result.Value);
         }
     }

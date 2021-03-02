@@ -23,18 +23,17 @@ namespace Application.Photos
             private readonly DataContext _context;
             private readonly IPhotoAccessor _photoAccessor;
             private readonly IUserAccessor _userAccessor;
-
             public Handler(DataContext context, IPhotoAccessor photoAccessor, IUserAccessor userAccessor)
             {
-                _context = context;
-                _photoAccessor = photoAccessor;
                 _userAccessor = userAccessor;
+                _photoAccessor = photoAccessor;
+                _context = context;
             }
 
             public async Task<Result<Photo>> Handle(Command request, CancellationToken cancellationToken)
             {
-                var user = await _context.Users.Include(u => u.Photos)
-                .FirstOrDefaultAsync(x => x.Id == _userAccessor.GetUserId());
+                var user = await _context.Users.Include(p => p.Photos)
+                    .FirstOrDefaultAsync(x => x.UserName == _userAccessor.GetUsername());
 
                 if (user == null) return null;
 
@@ -43,17 +42,18 @@ namespace Application.Photos
                 var photo = new Photo
                 {
                     Url = photoUploadResult.Url,
-                    Id = photoUploadResult.PublicId,
-                    IsMain = user.Photos.Any(x => x.IsMain) ? false : true
+                    Id = photoUploadResult.PublicId
                 };
+
+                if (!user.Photos.Any(x => x.IsMain)) photo.IsMain = true;
 
                 user.Photos.Add(photo);
 
-                bool result = await _context.SaveChangesAsync() > 0;
+                var result = await _context.SaveChangesAsync() > 0;
 
                 if (result) return Result<Photo>.Success(photo);
 
-                return Result<Photo>.Failure("Error while adding the photo");
+                return Result<Photo>.Failure("Problem adding photo");
             }
         }
     }

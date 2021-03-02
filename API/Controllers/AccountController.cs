@@ -19,18 +19,19 @@ namespace API.Controllers
         private readonly UserManager<AppUser> _userManager;
         private readonly SignInManager<AppUser> _signInManager;
         private readonly TokenService _tokenService;
-
-        public AccountController(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, TokenService tokenService)
+        public AccountController(UserManager<AppUser> userManager,
+        SignInManager<AppUser> signInManager, TokenService tokenService)
         {
-           _tokenService = tokenService;
-            _userManager = userManager;
+            _tokenService = tokenService;
             _signInManager = signInManager;
+            _userManager = userManager;
         }
 
         [HttpPost("login")]
         public async Task<ActionResult<UserDto>> Login(LoginDto loginDto)
         {
-            var user = await _userManager.Users.Include(x=>x.Photos).FirstOrDefaultAsync(x=>x.Email==loginDto.Email);
+            var user = await _userManager.Users.Include(p => p.Photos)
+                .FirstOrDefaultAsync(x => x.Email == loginDto.Email);
 
             if (user == null) return Unauthorized();
 
@@ -38,66 +39,62 @@ namespace API.Controllers
 
             if (result.Succeeded)
             {
-                return  ReturnUserObject(user);
-
+                return CreateUserObject(user);
             }
 
             return Unauthorized();
         }
 
         [HttpPost("register")]
-        public async Task<ActionResult<UserDto>> Register(RegisterDTO registerDTO)
+        public async Task<ActionResult<UserDto>> Register(RegisterDto registerDto)
         {
-            if(await _userManager.Users.AnyAsync(u=>u.Email==registerDTO.Email)) {
-                ModelState.AddModelError("email","Email is already taken");
-
-                return ValidationProblem();
-                
-            };
-            if(await _userManager.Users.AnyAsync(u=>u.UserName==registerDTO.Username))
+            if (await _userManager.Users.AnyAsync(x => x.Email == registerDto.Email))
             {
-
-                ModelState.AddModelError("username","Username is already taken");
-                
+                ModelState.AddModelError("email", "Email taken");
                 return ValidationProblem();
-                 
+            }
+            if (await _userManager.Users.AnyAsync(x => x.UserName == registerDto.Username))
+            {
+                ModelState.AddModelError("username", "Username taken");
+                return ValidationProblem();
+            }
+
+            var user = new AppUser
+            {
+                DisplayName = registerDto.DisplayName,
+                Email = registerDto.Email,
+                UserName = registerDto.Username
             };
 
-            var user = new AppUser{
-                DisplayName= registerDTO.DisplayName,
-                Email = registerDTO.Email,
-                UserName= registerDTO.Username
-            };
-
-            var result = await _userManager.CreateAsync(user, registerDTO.Password);
+            var result = await _userManager.CreateAsync(user, registerDto.Password);
 
             if (result.Succeeded)
             {
-                return  ReturnUserObject(user);
+                return CreateUserObject(user);
             }
 
-            return Unauthorized();
-           
+            return BadRequest("Problem registering user");
         }
+
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<UserDto>> GetCurrentUser()
         {
-            var user = await _userManager.Users.Include(x=>x.Photos).FirstOrDefaultAsync(x=>x.Id==User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var user = await _userManager.Users.Include(p => p.Photos)
+                .FirstOrDefaultAsync(x => x.Email == User.FindFirstValue(ClaimTypes.Email));
 
-            return ReturnUserObject(user);
-
+            return CreateUserObject(user);
         }
 
-        private UserDto ReturnUserObject(AppUser user)
+        private UserDto CreateUserObject(AppUser user)
         {
             return new UserDto
             {
                 DisplayName = user.DisplayName,
-                Image = user?.Photos?.FirstOrDefault(x=>x.IsMain)?.Url, //? for in case we don't have any photos for the user.
+                Image = user?.Photos?.FirstOrDefault(x => x.IsMain)?.Url,
                 Token = _tokenService.CreateToken(user),
                 Username = user.UserName
             };
         }
-
     }
 }

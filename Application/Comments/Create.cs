@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.Core;
@@ -17,63 +16,54 @@ namespace Application.Comments
     {
         public class Command : IRequest<Result<CommentDto>>
         {
-            public string Body {get;set;}
+            public string Body { get; set; }
             public Guid ActivityId { get; set; }
         }
 
-        public class CommandValidator : AbstractValidator<Command>{
-            public CommandValidator(){
-                RuleFor(x=>x.Body).NotEmpty();
-
+        public class CommandValidator : AbstractValidator<Command>
+        {
+            public CommandValidator()
+            {
+                RuleFor(x => x.Body).NotEmpty();
             }
         }
 
         public class Handler : IRequestHandler<Command, Result<CommentDto>>
         {
-            private readonly DataContext context;
-            private readonly IMapper mapper;
-            private readonly IUserAccessor userAccessor;
-
-            public Handler(DataContext context, IMapper mapper, IUserAccessor userAccessor){
-                this.context = context;
-                this.mapper = mapper;
-                this.userAccessor = userAccessor;
+            private readonly IUserAccessor _userAccessor;
+            private readonly DataContext _context;
+            private readonly IMapper _mapper;
+            public Handler(DataContext context, IMapper mapper, IUserAccessor userAccessor)
+            {
+                _mapper = mapper;
+                _context = context;
+                _userAccessor = userAccessor;
             }
+
             public async Task<Result<CommentDto>> Handle(Command request, CancellationToken cancellationToken)
             {
-                var activity = await context.Activities.FirstOrDefaultAsync(x=>x.Id==request.ActivityId);
+                var activity = await _context.Activities.FindAsync(request.ActivityId);
 
-                if(activity == null) return null;
+                if (activity == null) return null;
 
-                var user = await context.Users
-                .Include(p=>p.Photos)
-                .SingleOrDefaultAsync(x=>x.UserName==userAccessor.GetUserName());
+                var user = await _context.Users
+                    .Include(p => p.Photos)
+                    .SingleOrDefaultAsync(x => x.UserName == _userAccessor.GetUsername());
 
-                if(user == null) return null;
-
-                Comment comment = new Comment{
-                    Activity=activity,
-                    Author=user,
-                    Body=request.Body,
+                var comment = new Comment
+                {
+                    Author = user,
+                    Activity = activity,
+                    Body = request.Body
                 };
 
                 activity.Comments.Add(comment);
 
-                var result = await context.SaveChangesAsync()>0;
+                var success = await _context.SaveChangesAsync() > 0;
 
-                // CommentDto commentDto = new CommentDto{
-                //     Body=comment.Body,
-                //     CreatedAt=comment.CreatedAt,
-                //     DisplayName=comment.Author.DisplayName,
-                //     Id=comment.Id,
-                //     Image=comment.Author.Photos.FirstOrDefault(x=>x.IsMain).Url,
-                //     Username=comment.Author.UserName
-                // };
+                if (success) return Result<CommentDto>.Success(_mapper.Map<CommentDto>(comment));
 
-                if(result) return Result<CommentDto>.Success(mapper.Map<CommentDto>(comment));
-
-                return Result<CommentDto>.Failure("Problem occured while adding comment");
-
+                return Result<CommentDto>.Failure("Failed to add comment");
             }
         }
     }
