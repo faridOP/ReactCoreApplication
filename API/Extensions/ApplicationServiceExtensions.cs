@@ -35,17 +35,17 @@ namespace API.Extensions
                     var connUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 
                     // Parse connection URL to connection string for Npgsql
-                    connUrl = connUrl.Replace("postgres://", string.Empty);
-                    var pgUserPass = connUrl.Split("@")[0];
-                    var pgHostPortDb = connUrl.Split("@")[1];
-                    var pgHostPort = pgHostPortDb.Split("/")[0];
-                    var pgDb = pgHostPortDb.Split("/")[1];
-                    var pgUser = pgUserPass.Split(":")[0];
-                    var pgPass = pgUserPass.Split(":")[1];
-                    var pgHost = pgHostPort.Split(":")[0];
-                    var pgPort = pgHostPort.Split(":")[1];
+                    // connUrl = connUrl.Replace("postgres://", string.Empty);
+                    // var pgUserPass = connUrl.Split("@")[0];
+                    // var pgHostPortDb = connUrl.Split("@")[1];
+                    // var pgHostPort = pgHostPortDb.Split("/")[0];
+                    // var pgDb = pgHostPortDb.Split("/")[1];
+                    // var pgUser = pgUserPass.Split(":")[0];
+                    // var pgPass = pgUserPass.Split(":")[1];
+                    // var pgHost = pgHostPort.Split(":")[0];
+                    // var pgPort = pgHostPort.Split(":")[1];
 
-                    connStr = $"Server={pgHost};Port={pgPort};User Id={pgUser};Password={pgPass};Database={pgDb}; SSL Mode=Require; Trust Server Certificate=true";
+                    connStr = "postgres://bxonhiovogwzrb:092ac0e130ce0d18f85aef0ef9a8773ccd37e3d748fa10a77bddb7c33fa38568@ec2-54-209-43-223.compute-1.amazonaws.com:5432/d5q7cp3m51h2ch";
                 }
 
                 // Whether the connection string came from the local development configuration file
