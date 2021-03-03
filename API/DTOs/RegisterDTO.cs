@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace API.DTOs
 {
-    public class RegisterDto
+    public class RegisterDTO
     {
         [Required]
         public string DisplayName { get; set; }
@@ -12,10 +12,10 @@ namespace API.DTOs
         public string Email { get; set; }
 
         [Required]
-        [RegularExpression("(?=.*\\d)(?=.*[a-z])(?=.*[A-Z]).{4,8}$", ErrorMessage = "Password must be complex")]
+        [RegularExpression("(?=.*\\d)(?=.*[a-z])(?=.*[A-Z]).{4,8}$",ErrorMessage="Password is too weak")]
         public string Password { get; set; }
-
         [Required]
+
         public string Username { get; set; }
     }
 }

@@ -1,52 +1,66 @@
-using System;
+using Microsoft.AspNetCore.Mvc;
+using Domain;
 using System.Threading.Tasks;
 using Application.Activities;
-using Application.Core;
-using Domain;
+using System;
+using System.Threading;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+using Application.Core;
 
 namespace API.Controllers
 {
+    // [AllowAnonymous]
     public class ActivitiesController : BaseApiController
     {
+    
+        // private readonly IMediator _mediator;
+        // public ActivitiesController(IMediator mediator)
+        // { 
+        //     _mediator = mediator;
+        // }
+
         [HttpGet]
-        public async Task<IActionResult> GetActivities([FromQuery] ActivityParams param)
+        [Route("List")]
+        [Route("")]
+        // [Authorize(Roles="CustomFreddy")]
+        public async Task<IActionResult> List([FromQuery] ActivityParams param)
         {
-            return HandlePagedResult(await Mediator.Send(new List.Query{Params = param}));
+            return HandlePagedResult(await Mediator.Send(new List.Query{Params=param}));
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetActivity(Guid id)
-        {
-            return HandleResult(await Mediator.Send(new Details.Query{Id = id}));
-        }
+        [HttpGet]
+        [Route("{id}")]
+        public async Task<IActionResult> Details(Guid id){
 
+
+           return  HandleResult(await Mediator.Send(new Details.Query{Id=id}));
+
+            // if(activity==null) return NotFound(); This is one way of 'normal' error handling.
+        }
         [HttpPost]
-        public async Task<IActionResult> CreateActivity(Activity activity)
-        {
-            return HandleResult(await Mediator.Send(new Create.Command {Activity = activity}));
+        public async Task<IActionResult> Create(Activity activity){
+            return HandleResult(await Mediator.Send(new Create.Command{Activity = activity}));
         }
 
-        [Authorize(Policy = "IsActivityHost")]
+        [Authorize(Policy="IsActivityHost")]
         [HttpPut("{id}")]
-        public async Task<IActionResult> EditActivity(Guid id, Activity activity)
-        {
-            activity.Id = id;
-            return HandleResult(await Mediator.Send(new Edit.Command{Activity = activity}));
+        public async Task<IActionResult> Edit(Guid Id,Activity activity){
+            activity.Id=Id;
+            
+            return HandleResult(await Mediator.Send(new Edit.Command{Activity=activity}));
         }
 
-        [Authorize(Policy = "IsActivityHost")]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteActivity(Guid id)
-        {
-            return HandleResult(await Mediator.Send(new Delete.Command{Id = id}));
+        public async Task<IActionResult> Delete(Guid Id){
+            
+            return HandleResult(await Mediator.Send(new Delete.Command{Id=Id}));
         }
 
         [HttpPost("{id}/attend")]
-        public async Task<IActionResult> Attend(Guid id)
-        {
-            return HandleResult(await Mediator.Send(new UpdateAttendance.Command{Id = id}));
+        public async Task<IActionResult> Attend(Guid id){
+            return HandleResult(await Mediator.Send(new UpdateAttendance.Command{Id=id}));
         }
     }
+
+
 }

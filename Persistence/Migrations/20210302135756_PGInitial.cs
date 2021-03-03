@@ -207,7 +207,9 @@ namespace Persistence.Migrations
                     Body = table.Column<string>(type: "text", nullable: true),
                     AuthorId = table.Column<string>(type: "text", nullable: true),
                     ActivityId = table.Column<Guid>(type: "uuid", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    ParentCommentId = table.Column<int>(type: "integer", nullable: true),
+                    isReply = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -222,6 +224,12 @@ namespace Persistence.Migrations
                         name: "FK_Comments_AspNetUsers_AuthorId",
                         column: x => x.AuthorId,
                         principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Comments_Comments_ParentCommentId",
+                        column: x => x.ParentCommentId,
+                        principalTable: "Comments",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -321,6 +329,11 @@ namespace Persistence.Migrations
                 name: "IX_Comments_AuthorId",
                 table: "Comments",
                 column: "AuthorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Comments_ParentCommentId",
+                table: "Comments",
+                column: "ParentCommentId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Photos_AppUserId",

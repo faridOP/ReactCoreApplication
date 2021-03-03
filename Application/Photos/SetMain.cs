@@ -11,43 +11,43 @@ namespace Application.Photos
 {
     public class SetMain
     {
-        public class Command : IRequest<Result<Unit>>
+        public class  Command : IRequest<Result<Unit>>
         {
-            public string Id { get; set; }
+            public string Id {get;set;}
         }
 
         public class Handler : IRequestHandler<Command, Result<Unit>>
         {
+
             private readonly DataContext _context;
             private readonly IUserAccessor _userAccessor;
-            public Handler(DataContext context, IUserAccessor userAccessor)
+            public Handler(DataContext context, IUserAccessor userAccessor )
             {
-                _userAccessor = userAccessor;
                 _context = context;
+                _userAccessor = userAccessor;
             }
 
             public async Task<Result<Unit>> Handle(Command request, CancellationToken cancellationToken)
             {
-                var user = await _context.Users.Include(p => p.Photos)
-                    .FirstOrDefaultAsync(x => x.UserName == _userAccessor.GetUsername());
+                var user = await _context.Users.Include(x=>x.Photos).FirstOrDefaultAsync(x=>x.Id==_userAccessor.GetUserId());
 
-                if (user == null) return null;
+                if(user==null) return null;
 
-                var photo = user.Photos.FirstOrDefault(x => x.Id == request.Id);
+                var previousMainPhoto = user.Photos.FirstOrDefault(x=>x.IsMain);
+                if(previousMainPhoto==null) return null;
 
-                if (photo == null) return null; 
+                previousMainPhoto.IsMain=false;
 
-                var currentMain = user.Photos.FirstOrDefault(x => x.IsMain);
+                var currentPhoto = user.Photos.FirstOrDefault(x=>x.Id==request.Id);
 
-                if (currentMain != null) currentMain.IsMain = false;
+                if(currentPhoto==null) return null;
+                currentPhoto.IsMain=true;
 
-                photo.IsMain = true;
+                bool result = await _context.SaveChangesAsync()>0;
 
-                var success = await _context.SaveChangesAsync() > 0;
+                if(result) return Result<Unit>.Success(Unit.Value);
 
-                if (success) return Result<Unit>.Success(Unit.Value);
-
-                return Result<Unit>.Failure("Problem setting main photo");
+                return Result<Unit>.Failure("Problem occured while saving the changes");
             }
         }
     }
